@@ -56,7 +56,7 @@ typedef struct cpu_socket_t cpu_socket_t;
 struct prrte_rmaps_rank_file_map_t {
     prrte_object_t super;
     char* node_name;
-    char slot_list[64];
+    char *slot_list;
 };
 typedef struct prrte_rmaps_rank_file_map_t prrte_rmaps_rank_file_map_t;
 

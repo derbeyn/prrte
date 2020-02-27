@@ -156,11 +156,12 @@ static int prrte_rmaps_rank_file_close(void)
 static void rf_map_construct(prrte_rmaps_rank_file_map_t *ptr)
 {
     ptr->node_name = NULL;
-    memset(ptr->slot_list, (char)0x00, 64);
+    ptr->slot_list = NULL;
 }
 static void rf_map_destruct(prrte_rmaps_rank_file_map_t *ptr)
 {
     if (NULL != ptr->node_name) free(ptr->node_name);
+    if (NULL != ptr->slot_list) free(ptr->slot_list);
 }
 PRRTE_CLASS_INSTANCE(prrte_rmaps_rank_file_map_t,
                    prrte_object_t,

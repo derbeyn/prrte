@@ -247,7 +247,7 @@ static int prrte_rmaps_rf_map(prrte_job_t *jdata)
                     goto error;
                 }
             } else {
-                if (0 == strlen(rfmap->slot_list)) {
+                if (NULL == rfmap->slot_list || 0 == strlen(rfmap->slot_list)) {
                     /* rank was specified but no slot list given - that's an error */
                     prrte_show_help("help-rmaps_rank_file.txt","no-slot-list", true, rank, rfmap->node_name);
                     rc = PRRTE_ERR_SILENT;
@@ -400,7 +400,7 @@ static int prrte_rmaps_rank_file_parse(const char *rankfile)
     prrte_node_t *hnp_node;
     prrte_rmaps_rank_file_map_t *rfmap=NULL;
     prrte_pointer_array_t *assigned_ranks_array;
-    char tmp_rank_assignment[64];
+    char *tmp_rank_assignment;
 
     /* keep track of rank assignments */
     assigned_ranks_array = PRRTE_NEW(prrte_pointer_array_t);
@@ -543,8 +543,10 @@ static int prrte_rmaps_rank_file_parse(const char *rankfile)
                     goto unlock;
                 } else {
                     /* prepare rank assignment string for the help message in case of a bad-assign */
+                    tmp_rank_assignment = (char *)malloc((strlen(node_name) +
+                                          strlen(value) + 64) * sizeof(char));
                     sprintf(tmp_rank_assignment, "%s slot=%s", node_name, value);
-                    prrte_pointer_array_set_item(assigned_ranks_array, 0, tmp_rank_assignment);
+                    prrte_pointer_array_set_item(assigned_ranks_array, rank, tmp_rank_assignment);
                 }
 
                 /* check the rank item */
@@ -555,9 +557,7 @@ static int prrte_rmaps_rank_file_parse(const char *rankfile)
                     free(value);
                     goto unlock;
                 }
-                for (i=0; i < 64 && '\0' != value[i]; i++) {
-                    rfmap->slot_list[i] = value[i];
-                }
+                rfmap->slot_list = strdup(value);
                 free(value);
                 break;
         }
@@ -568,6 +568,14 @@ static int prrte_rmaps_rank_file_parse(const char *rankfile)
 unlock:
     if (NULL != node_name) {
         free(node_name);
+    }
+
+    cnt = prrte_pointer_array_get_size(assigned_ranks_array);
+    for (i = 0; i < cnt; i++) {
+        if (NULL != (tmp_rank_assignment = prrte_pointer_array_get_item(assigned_ranks_array, i))) {
+            free(tmp_rank_assignment);
+            prrte_pointer_array_set_item(assigned_ranks_array, i, NULL);
+        }
     }
     PRRTE_RELEASE(assigned_ranks_array);
     prrte_rmaps_rank_file_name_cur = NULL;
